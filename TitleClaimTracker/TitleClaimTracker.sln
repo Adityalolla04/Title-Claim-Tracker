@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.14.36414.22
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TitleClaimTracker", "TitleClaimTracker.csproj", "{B18B466C-8CBB-4DFD-9C05-88A7BE2FC161}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TitleClaimTracker.Tests", "..\TitleClaimTracker.Tests\TitleClaimTracker.Tests.csproj", "{D606A416-93EE-40B7-B1F5-31C98BEE21EA}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{B18B466C-8CBB-4DFD-9C05-88A7BE2FC161}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B18B466C-8CBB-4DFD-9C05-88A7BE2FC161}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B18B466C-8CBB-4DFD-9C05-88A7BE2FC161}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B18B466C-8CBB-4DFD-9C05-88A7BE2FC161}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D606A416-93EE-40B7-B1F5-31C98BEE21EA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D606A416-93EE-40B7-B1F5-31C98BEE21EA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D606A416-93EE-40B7-B1F5-31C98BEE21EA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D606A416-93EE-40B7-B1F5-31C98BEE21EA}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {A6660CAA-8A46-495B-A822-D04F36BF5B0B}
+	EndGlobalSection
+EndGlobal
