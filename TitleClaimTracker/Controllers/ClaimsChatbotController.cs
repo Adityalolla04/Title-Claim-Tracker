@@ -1,28 +1,32 @@
+// File: TitleClaimTracker/Controllers/ClaimsChatbotController.cs
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Options;
 using TitleClaimTracker.Core.DTOs;
-using TitleClaimTracker.Core.Exceptions;
 using TitleClaimTracker.Infrastructure.Services;
 
 namespace TitleClaimTracker.Controllers;
 
-public sealed class AiServiceOptions { public double MinimumConfidence { get; set; } = 0.65; }
-
-[ApiController, Route("api/chatbot")]
-public sealed class ClaimsChatbotController(ITitleAiClientService aiClient, IFilingService filingService, IOptions<AiServiceOptions> options) : ControllerBase
+[ApiController, Authorize, Route("api/chatbot")]
+public sealed class ClaimsChatbotController(IChatbotTriageService triageService) : ControllerBase
 {
-    [HttpPost("extract")]
-    public async Task<ActionResult<ChatbotResponseDto>> Extract(AiTriageRequestDto request, CancellationToken cancellationToken)
+    [HttpPost("triage")]
+    public async Task<ActionResult<ChatbotResponseDto>> Triage([FromBody] ChatTriageRequestDto request, CancellationToken cancellationToken) => Ok(await triageService.TriageAsync(request, cancellationToken));
+
+    [HttpPost("drafts/submit")]
+    public async Task<ActionResult<ClaimSummaryDto>> SubmitDraft([FromBody] SubmitTriageDraftDto request, [FromServices] IIdempotencyService idempotency, CancellationToken cancellationToken)
     {
-        var extracted = await aiClient.ExtractClaimAsync(request.RawText, cancellationToken);
-        if (extracted.ConfidenceScore < options.Value.MinimumConfidence) throw new AiExtractionConfidenceException(extracted.ConfidenceScore, options.Value.MinimumConfidence);
-        return Ok(new ChatbotResponseDto("I extracted the claim details below. Confirm them to save the filing.", true, extracted, null));
+        if (!Request.Headers.TryGetValue("Idempotency-Key", out var key)) return BadRequest(new { error = "An Idempotency-Key header is required." });
+        var result = await idempotency.ExecuteAsync("triage.submit", key.ToString(), request, token => triageService.SubmitDraftAsync(request, token), StatusCodes.Status200OK, cancellationToken);
+        return StatusCode(result.StatusCode, result.Value);
     }
 
-    [HttpPost("confirm")]
-    public async Task<ActionResult<ChatbotResponseDto>> Confirm(CreateFilingDto request, CancellationToken cancellationToken)
+    [Authorize(Roles = "Admin"), HttpGet("review")]
+    public async Task<ActionResult<IReadOnlyList<TriageAttemptDto>>> Review(CancellationToken cancellationToken) => Ok(await triageService.GetReviewQueueAsync(cancellationToken));
+
+    [Authorize(Roles = "Admin"), HttpPost("review/{attemptId:long}/feedback")]
+    public async Task<IActionResult> Feedback(long attemptId, [FromBody] TriageFeedbackDto request, CancellationToken cancellationToken)
     {
-        var saved = await filingService.CreateAsync(request, cancellationToken);
-        return Ok(new ChatbotResponseDto($"Filing {saved.FilingID} was saved successfully.", false, null, saved));
+        await triageService.RecordFeedbackAsync(attemptId, request, cancellationToken);
+        return NoContent();
     }
 }

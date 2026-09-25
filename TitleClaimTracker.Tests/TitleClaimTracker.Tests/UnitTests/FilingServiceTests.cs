@@ -1,116 +1,86 @@
-﻿using System;
-using System.Threading.Tasks;
-using Xunit;
-using Microsoft.EntityFrameworkCore;
-using TitleClaimTracker.Data;
-using TitleClaimTracker.Services;
-using TitleClaimTracker.Models;
-using System.Collections.Generic;
+﻿using Microsoft.EntityFrameworkCore;
+using TitleClaimTracker.Domain.Entities;
+using TitleClaimTracker.Infrastructure.Data;
+using TitleClaimTracker.Infrastructure.Repositories;
 
-namespace TitleClaimTracker.Tests.UnitTests
+namespace TitleClaimTracker.Tests.UnitTests;
+
+public sealed class FilingRepositorySecurityTests
 {
-    public class FilingServiceTests
+    [Fact]
+    public async Task RegularUser_CanOnlyReadOwnActiveFilings()
     {
-        private ApplicationDbContext GetInMemoryDbContext()
-        {
-            var options = new DbContextOptionsBuilder<ApplicationDbContext>()
-                .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
-                .Options;
+        await using var context = CreateContext();
+        SeedFilings(context);
+        var repository = new FilingRepository(context);
 
-            var context = new ApplicationDbContext(options);
-            context.Database.EnsureCreated();
+        var result = await repository.SearchAsync(null, null, null, 1, 25, "user-a", false, CancellationToken.None);
 
-            // Seed required FK data for all tests
-            context.FilingTypes.Add(new FilingType { FilingTypeID = 1, TypeName = "Test Type" });
-            context.Properties.Add(new Property { PropertyID = 1, Address = "Dummy", City = "Dummy", State = "TX", LegalDescription = "Dummy" });
-            context.SaveChanges();
-
-            return context;
-        }
-
-        [Fact]
-        public async Task CreateFiling_ShouldSaveRecord_WhenAllRequiredFieldsArePresent()
-        {
-            // Arrange
-            using var context = GetInMemoryDbContext();
-            var service = new FilingService(context);
-
-            var newFiling = new LegalFiling
-            {
-                ClaimantName = "John Tester",
-                DateFiled = DateTime.Now,
-                Status = "New",
-                FilingTypeID = 1,
-                // Tested with required property fields
-                Property = new Property
-                {
-                    Address = "123 Test St",
-                    City = "Testville",
-                    State = "TX",
-                    LegalDescription = "Lot 42, Block B, Test Subdivision"
-                },
-                // Tested with required Notes field for LegalFiling
-                Notes = "Initial test case."
-            };
-
-            // Act
-            int createdId = await service.CreateFilingAndPropertyAsync(newFiling);
-
-            // Assert
-            Assert.True(createdId > 0);
-            var savedFiling = await context.LegalFilings.FirstOrDefaultAsync(f => f.FilingID == createdId);
-            Assert.NotNull(savedFiling);
-        }
-
-        [Fact]
-        public async Task GetFilingById_ShouldThrowException_WhenIdDoesNotExist()
-        {
-            // Arrange
-            using var context = GetInMemoryDbContext();
-            var service = new FilingService(context);
-            int invalidId = 99999;
-
-            // Act & Assert
-            await Assert.ThrowsAsync<KeyNotFoundException>(async () =>
-            {
-                await service.GetFilingByIdAsync(invalidId);
-            });
-        }
-
-        [Fact]
-        public async Task UpdateStatus_ShouldThrowError_IfStatusIsInvalid()
-        {
-            // Arrange
-            using var context = GetInMemoryDbContext();
-            var service = new FilingService(context);
-            await Assert.ThrowsAsync<ArgumentException>(async () =>
-            {
-                await service.UpdateFilingStatusAsync(1, "Archived");
-            });
-        }
-        [Fact]
-        public async Task DeleteFiling_ShouldRemoveRecord_WhenIdExists()
-        {
-            // Arrange
-            using var context = GetInMemoryDbContext();
-            var service = new FilingService(context);
-            var filingToDelete = new LegalFiling
-            {
-                ClaimantName = "Delete Me",
-                DateFiled = DateTime.Now,
-                Status = "New",
-                FilingTypeID = 1,
-                PropertyID = 1,
-                Notes = "To be deleted."
-            };
-            context.LegalFilings.Add(filingToDelete);
-            await context.SaveChangesAsync();
-            // Act
-            bool deleteResult = await service.DeleteFilingAsync(filingToDelete.FilingID);
-            // Assert
-            Assert.True(deleteResult);
-            var deletedFiling = await context.LegalFilings.FindAsync(filingToDelete.FilingID);
-            Assert.Null(deletedFiling);
-        }
+        var filing = Assert.Single(result.Items);
+        Assert.Equal(1, filing.FilingID);
+        Assert.Equal(1, result.Total);
     }
+
+    [Fact]
+    public async Task RegularUser_CannotLookupAnotherUsersOrSoftDeletedFiling()
+    {
+        await using var context = CreateContext();
+        SeedFilings(context);
+        var repository = new FilingRepository(context);
+
+        Assert.Null(await repository.GetByIdAsync(2, "user-a", false, CancellationToken.None));
+        Assert.Null(await repository.GetByIdAsync(4, "user-a", false, CancellationToken.None));
+    }
+
+    [Fact]
+    public async Task Administrator_CanReadActiveUnassignedAndCrossUserFilings()
+    {
+        await using var context = CreateContext();
+        SeedFilings(context);
+        var repository = new FilingRepository(context);
+
+        var result = await repository.SearchAsync(null, null, null, 1, 25, "admin", true, CancellationToken.None);
+
+        Assert.Equal(3, result.Total);
+        Assert.Equal(new[] { 3, 2, 1 }, result.Items.Select(item => item.FilingID).ToArray());
+    }
+
+    private static TitleClaimDbContext CreateContext()
+    {
+        var options = new DbContextOptionsBuilder<TitleClaimDbContext>()
+            .UseInMemoryDatabase(Guid.NewGuid().ToString())
+            .Options;
+        return new TitleClaimDbContext(options);
+    }
+
+    private static void SeedFilings(TitleClaimDbContext context)
+    {
+        var property = new Property { PropertyID = 1, Address = "1 Main Street", City = "Austin", State = "TX" };
+        var filingType = new FilingType { FilingTypeID = 1, TypeName = "Title Claim" };
+        context.Properties.Add(property);
+        context.FilingTypes.Add(filingType);
+        context.LegalFilings.AddRange(
+            CreateFiling(1, "user-a", property, filingType, false),
+            CreateFiling(2, "user-b", property, filingType, false),
+            CreateFiling(3, null, property, filingType, false),
+            CreateFiling(4, "user-a", property, filingType, true));
+        context.SaveChanges();
+    }
+
+    private static LegalFiling CreateFiling(int id, string? owner, Property property, FilingType filingType, bool isDeleted) => new()
+    {
+        FilingID = id,
+        PropertyID = property.PropertyID,
+        FilingTypeID = filingType.FilingTypeID,
+        Property = property,
+        FilingType = filingType,
+        DateFiled = new DateTime(2025, 1, id),
+        Status = "New",
+        SubmittedByUserId = owner,
+        CreatedUtc = DateTime.UtcNow,
+        UpdatedUtc = DateTime.UtcNow,
+        IsDeleted = isDeleted,
+        DeletedUtc = isDeleted ? DateTime.UtcNow : null,
+        DeletedByUserId = isDeleted ? "admin" : null,
+    };
 }

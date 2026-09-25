@@ -1,0 +1,11 @@
+<!-- File: TitleClaimTracker/ClientApp/src/app/features/chatbot/chatbot.component.html -->
+<main class="workspace">
+  <header class="hero"><div><span class="eyebrow">TITLE OPERATIONS</span><h1>Claim intelligence desk</h1><p>Native ML.NET triage for every title filing.</p></div><button class="refresh" type="button" (click)="refresh()">Refresh claims</button></header>
+  <div class="api-alert" *ngIf="apiError()">{{ apiError() }}</div><section class="grid">
+    <article class="chat card"><div class="card-heading"><div><span class="eyebrow">AI TRIAGE</span><h2>Describe a title issue</h2></div><span class="online">● Online</span></div>
+      <div class="messages" aria-live="polite"><div class="message" [class.user]="item.role === 'user'" *ngFor="let item of messages()"><span class="avatar">{{ item.role === 'user' ? 'You' : 'AI' }}</span><div><p>{{ item.text }}</p><div class="preview" *ngIf="item.claim as claim"><strong>Claim #{{ claim.filingID }}</strong><span>{{ claim.filingType }}</span><b [class]="riskClass(claim.riskScore)">{{ claim.riskScore | percent:'1.0-0' }} risk</b></div></div></div><div class="typing" *ngIf="loading()"><i></i><i></i><i></i></div></div>
+      <div class="suggestions"><button type="button" *ngFor="let suggestion of suggestions" (click)="send(suggestion)">{{ suggestion }}</button></div><form (ngSubmit)="send()"><input [formControl]="messageControl" placeholder="Example: lien filed against 10 Main Street..." aria-label="Describe a title issue"><button class="send" type="submit" [disabled]="messageControl.invalid || loading()">Send</button></form>
+    </article>
+    <aside class="card dashboard"><div class="card-heading"><div><span class="eyebrow">LIVE DASHBOARD</span><h2>Recent claims</h2></div><span class="count">{{ claims().length }}</span></div><div class="claim-list"><div class="claim-row" *ngFor="let claim of claims()"><div><strong>{{ claim.filingType }}</strong><small>{{ claim.address }}, {{ claim.city }}</small></div><span [class]="riskClass(claim.riskScore)">{{ claim.riskScore | percent:'1.0-0' }}</span></div><p class="empty" *ngIf="claims().length === 0">No claims loaded yet. Refresh to connect to the API.</p></div></aside>
+  </section>
+</main>

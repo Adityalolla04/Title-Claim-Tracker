@@ -13,3 +13,9 @@ public sealed class AiExtractionConfidenceException(double confidence, double mi
     public double Confidence { get; } = confidence;
     public double MinimumConfidence { get; } = minimum;
 }
+
+public sealed class ConcurrencyConflictException()
+    : InvalidOperationException("The claim was changed by another administrator. Refresh the claim and try again.");
+
+public sealed class IdempotencyConflictException(string message)
+    : InvalidOperationException(message);
