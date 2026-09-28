@@ -1,0 +1,13 @@
+{
+    "SnapshotUtc":  "2026-09-25T17:30:48.7105719Z",
+    "Mode":  "Public synthetic demo",
+    "Status":  "Passed",
+    "InputRows":  24,
+    "OutputRows":  24,
+    "RejectedRows":  0,
+    "DuplicateRows":  0,
+    "OrphanRows":  0,
+    "InvalidScoreRows":  0,
+    "ChronologyErrors":  0,
+    "IsSynthetic":  true
+}

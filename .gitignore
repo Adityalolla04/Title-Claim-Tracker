@@ -285,6 +285,13 @@ FakesAssemblies/
 .ntvs_analysis.dat
 node_modules/
 
+# Public-data snapshots and generated synthetic bulk outputs are local artifacts.
+Data/Public/Raw/*.json
+Data/Public/Manifests/acris-snapshot.json
+Data/Public/Manifests/validation-report.json
+Data/Synthetic/Samples/*.csv
+Data/Synthetic/Samples/manifest.json
+
 # Visual Studio 6 build log
 *.plg
 
@@ -361,3 +368,37 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+
+# Python environments, test caches, and generated runtime state
+.venv/
+**/.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Browser automation artifacts
+playwright-report/
+test-results/
+playwright/.auth/
+
+# Generated data and local-only public snapshots at the reorganized paths
+TitleClaimTracker/Data/Public/Raw/*.json
+TitleClaimTracker/Data/Public/Manifests/acris-snapshot.json
+TitleClaimTracker/Data/Public/Manifests/validation-report.json
+TitleClaimTracker/Data/Synthetic/Samples/*.csv
+TitleClaimTracker/Data/Synthetic/Samples/manifest.json
+TitleClaimTracker/Analytics/Data/Prepared/*.csv
+TitleClaimTracker/Analytics/outputs/quality-report.json
+TitleClaimTracker/Analytics/outputs/sql/
+TitleClaimTracker/Analytics/outputs/acris-spark-run/
+spark-warehouse/
+metastore_db/
+derby.log
+
+# Angular development cache and compiled bundles
+TitleClaimTracker/ClientApp/.angular/
+TitleClaimTracker/ClientApp/dist/

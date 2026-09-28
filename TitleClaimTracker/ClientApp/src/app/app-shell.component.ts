@@ -11,14 +11,18 @@ import { AuthService } from './core/services/auth.service';
   template: `
     <div class="app-frame">
       <header class="topbar">
-        <a class="brand" routerLink="/" aria-label="Title Claim Intelligence home">
+        <a class="brand" [routerLink]="auth.isAuthenticated() ? '/claims' : '/'" aria-label="Title Claim Intelligence">
           <span class="brand-mark">TC</span>
           <span><strong>Title Claim</strong><small>INTELLIGENCE</small></span>
         </a>
         <nav aria-label="Primary navigation">
-          <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Home</a>
-          <a *ngIf="auth.isAuthenticated()" routerLink="/dashboard" routerLinkActive="active">My workspace</a>
-          <a *ngIf="auth.isAdministrator()" routerLink="/admin" routerLinkActive="active">Admin</a>
+          <ng-container *ngIf="auth.isAuthenticated(); else publicNavigation">
+            <a routerLink="/claims" routerLinkActive="active">Claims</a>
+            <a routerLink="/dashboard" routerLinkActive="active">Triage</a>
+          </ng-container>
+          <ng-template #publicNavigation>
+            <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Home</a>
+          </ng-template>
         </nav>
         <div class="account-actions">
           <ng-container *ngIf="auth.account() as account; else signedOut">
@@ -61,6 +65,7 @@ import { AuthService } from './core/services/auth.service';
     .session-alert { background: #fff3f0; border-bottom: 1px solid #f0c2b8; color: #8a1c1c; padding: 11px 24px; text-align: center; }
     .session-loading { color: #718096; font-size: .85rem; padding: 12px; text-align: center; }
     @media (max-width: 760px) { .topbar { flex-wrap: wrap; gap: 10px 18px; padding: 12px 16px; } nav { order: 3; width: 100%; } nav a { padding: 4px 0 8px; } .account-actions { margin-left: auto; } .account-name { display: none; } }
+    @media print { .topbar, .session-alert, .session-loading { display: none !important; } :host, .app-frame { background: #fff !important; } }
   `],
 })
 export class AppShellComponent {

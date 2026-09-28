@@ -1,0 +1,13 @@
+flowchart TD
+    Claimant[Claimant in Angular] --> Api[ASP.NET Core API]
+    Administrator[Administrator in Angular] --> Api
+    Api --> Identity[Identity, role, and ownership checks]
+    Identity --> Sql[SQL Server claim and workflow records]
+    Api --> Pdf[Private PDF storage on schema 2.0.4]
+    Api --> Extractor[Configured extraction provider]
+    Extractor --> Review[Human review and confirmation]
+    Review --> Api
+    Analyst[Authorized analyst] --> ReadOnly[Read-only PySpark export]
+    ReadOnly --> Sql
+    ReadOnly --> Aggregates[Reviewed analytics outputs]
+    Aggregates --> Tableau[Tableau reporting]

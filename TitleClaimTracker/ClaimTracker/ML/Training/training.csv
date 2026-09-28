@@ -1,0 +1,17 @@
+Text,FilingType,RiskScore,SourceGroup
+"claim against the title ownership and defective chain of title",Title Claim,0.82,title-a
+"owner disputes recorded title and requests quiet title relief",Title Claim,0.88,title-b
+"defective chain of title makes the property ownership unclear",Title Claim,0.79,title-c
+"recorded ownership claim conflicts with the buyer's deed",Title Claim,0.76,title-d
+"unpaid mortgage lien and notice of foreclosure",Lien,0.91,lien-a
+"mechanics lien recorded for unpaid construction invoice",Lien,0.84,lien-b
+"contractor placed a lien after an unpaid building invoice",Lien,0.82,lien-c
+"mortgage debt remains attached as a recorded lien",Lien,0.78,lien-d
+"utility company requests access across the parcel",Easement,0.48,easement-a
+"right of way and access easement is being contested",Easement,0.62,easement-b
+"neighbor claims a recorded right to cross the property",Easement,0.45,easement-c
+"utility access agreement limits use of the parcel",Easement,0.41,easement-d
+"buyer alleges forged deed and challenges conveyance",Deed Dispute,0.86,deed-a
+"deed signature is invalid and transfer is disputed",Deed Dispute,0.79,deed-b
+"purchaser says the signed deed was falsified",Deed Dispute,0.83,deed-c
+"conveyance is challenged because the deed was not valid",Deed Dispute,0.74,deed-d

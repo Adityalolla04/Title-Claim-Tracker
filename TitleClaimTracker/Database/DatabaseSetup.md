@@ -1,21 +1,52 @@
 # Execute the corrected SQL upgrade (2.0.3)
 
-The files are in `TitleClaimTracker/Database` inside your repository.
+## Add private PDF attachments (2.0.4)
+
+The 2.0.3 script remains the canonical base upgrade. The 2.0.4 script adds private
+supporting-PDF storage; it does not replace or modify the deployed 2.0.3 script. Apply
+2.0.4 only after the existing database has successfully reached schema version 2.0.3:
+
+1. Stop the application and take a full database backup.
+2. In SSMS, select the same existing database that is already at schema version 2.0.3.
+3. Run the complete `upgrades/Upgrade_ClaimDocuments_2.0.4.sql` file in one execution.
+  Do not enable SQLCMD mode, select a subsection, or rerun the 2.0.3 upgrade.
+4. Run `verification/Verify_ClaimDocuments_2.0.4.sql`. Confirm version 2.0.4, the
+  `ClaimDocuments` table, its constraints, foreign keys, and index are reported.
+5. Start the matching application. PDF upload and download require this manual schema
+  update; the application does not apply it at startup.
+
+The endpoint accepts up to five PDFs per claim, each at most 10 MiB. Access uses the
+same claim-owner/admin authorization as claim detail. The server checks the `.pdf`
+extension and file signature; client-side checks are only for usability. The database
+stores PDF bytes and metadata and retains them when a claim is soft-deleted.
+
+Administrators can analyze selectable PDF text from the claim record. Analysis is bounded
+to the first 25 pages and 24,000 characters. The default `AiService:Provider` is
+`Deterministic`, which returns a text preview and deterministic field extraction; an
+explicitly configured Python or Ollama provider receives the extracted text. Use only a
+provider approved for claim data. Image-only/scanned PDFs are not OCR-processed and must
+be reviewed in the original document. Extracted fields are suggestions, not verified
+facts or legal conclusions.
+
+## Execute the corrected SQL upgrade (2.0.3)
+
+The files are in `TitleClaimTracker/Database` inside your repository. The canonical
+upgrade is under `upgrades/`; read-only checks are under `verification/`.
 The project is script-managed; there is no EF migrations deployment path.
 
 ## Execution order: update the existing database
 
 1. Stop the running application and take a full backup of `TitleClaimTracker`.
 2. Open a NEW SSMS query window on your usual server and select `TitleClaimTracker`.
-3. Run `Inspect_TitleClaimIntelligence.sql` and retain the results.
-4. Open the LATEST `Upgrade_TitleClaimIntelligence.sql`. Close any older open copies.
+3. Run `verification/Inspect_TitleClaimIntelligence.sql` and retain the results.
+4. Open `upgrades/Upgrade_TitleClaimIntelligence.sql`. Close any older open copies.
    Its `@ExpectedDatabase` setting now defaults to `TitleClaimTracker`, matching the
    requested in-place upgrade. Confirm the query's dropdown also selects that database.
 5. Execute the WHOLE file with F5, without selecting a subsection. Leave SQLCMD mode OFF.
 	  Do not run the root TableCreation.sql first.
 6. If any error appears, save the Messages output and mismatch results. Do not manually
    shrink columns or disable checks. All schema phases share a rollback transaction.
-7. Run the latest `Verify_TitleClaimIntelligence.sql` against the same database. Expect
+7. Run `verification/Verify_TitleClaimIntelligence.sql` against the same database. Expect
    schema version `2.0.3`, no duplicate-grain rows, and no known legacy audit triggers.
    Existing category IDs/names, claim IDs, audit IDs, claim status strings and rows are retained.
 8. Build/start the matching application changes in this repository using the existing
@@ -26,12 +57,12 @@ is cumulative: do not run 2.0.1 first. A database already on 2.0.1 can also use 
 For an optional restored-copy test, change @ExpectedDatabase and the SSMS dropdown to
 the copy's name. The script never creates or switches databases.
 
-Example application commands from the repository's `TitleClaimTracker` directory:
+Example application commands from the repository root:
 
 ```powershell
-dotnet build
+dotnet build .\TitleClaimTracker\ClaimTracker\TitleClaimTracker.csproj
 $env:ConnectionStrings__DefaultConnection = 'Server=localhost\SQLEXPRESS01;Database=TitleClaimTracker;Integrated Security=True;TrustServerCertificate=True;'
-dotnet run
+dotnet run --project .\TitleClaimTracker\ClaimTracker\TitleClaimTracker.csproj
 ```
 
 Use your actual instance name. Environment variables apply to the current shell and its

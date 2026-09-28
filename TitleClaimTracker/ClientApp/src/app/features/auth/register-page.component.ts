@@ -25,7 +25,7 @@ import { AuthService } from '../../core/services/auth.service';
           <small class="field-error" *ngIf="form.controls.email.touched && form.controls.email.invalid">Enter a valid email address.</small>
           <label for="password">Password</label>
           <input id="password" type="password" autocomplete="new-password" formControlName="password" />
-          <small class="field-error" *ngIf="form.controls.password.touched && form.controls.password.invalid">Use 12–128 characters.</small>
+          <small class="field-error" *ngIf="form.controls.password.touched && form.controls.password.invalid">Use 12–128 characters with an uppercase letter, lowercase letter, number, and symbol.</small>
           <label for="confirmPassword">Confirm password</label>
           <input id="confirmPassword" type="password" autocomplete="new-password" formControlName="confirmPassword" />
           <small class="field-error" *ngIf="form.controls.confirmPassword.touched && form.controls.confirmPassword.value !== form.controls.password.value">Passwords must match.</small>
@@ -61,7 +61,7 @@ export class RegisterPageComponent {
   readonly form = new FormGroup({
     displayName: new FormControl('', { nonNullable: true, validators: [Validators.maxLength(200)] }),
     email: new FormControl('', { nonNullable: true, validators: [Validators.required, Validators.email, Validators.maxLength(256)] }),
-    password: new FormControl('', { nonNullable: true, validators: [Validators.required, Validators.minLength(12), Validators.maxLength(128)] }),
+    password: new FormControl('', { nonNullable: true, validators: [Validators.required, Validators.minLength(12), Validators.maxLength(128), Validators.pattern(/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9])/)] }),
     confirmPassword: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
   });
   pending = false;
@@ -79,7 +79,7 @@ export class RegisterPageComponent {
       password: this.form.controls.password.value,
       displayName: this.form.controls.displayName.value.trim() || null,
     }).subscribe({
-      next: () => void this.router.navigateByUrl('/dashboard'),
+      next: () => void this.router.navigateByUrl('/claims'),
       error: error => {
         this.pending = false;
         this.errorMessage.set(this.apiError(error, 'Registration failed. Check the form and try again.'));
@@ -89,12 +89,21 @@ export class RegisterPageComponent {
   }
 
   private apiError(error: unknown, fallback: string): string {
-    if (error instanceof HttpErrorResponse && typeof error.error?.error === 'string') {
-      return error.error.error;
-    }
-
-    if (error instanceof HttpErrorResponse && Array.isArray(error.error?.errors)) {
-      return error.error.errors.join(' ');
+    if (error instanceof HttpErrorResponse) {
+      const body: unknown = error.error;
+      if (typeof body === 'object' && body !== null) {
+        const payload = body as { error?: unknown; errors?: unknown; detail?: unknown };
+        if (typeof payload.error === 'string') return payload.error;
+        if (Array.isArray(payload.errors)) {
+          const messages = payload.errors.filter((item): item is string => typeof item === 'string');
+          if (messages.length) return messages.join(' ');
+        }
+        if (typeof payload.errors === 'object' && payload.errors !== null) {
+          const messages = Object.values(payload.errors).flatMap(value => Array.isArray(value) ? value : [value]).filter((item): item is string => typeof item === 'string');
+          if (messages.length) return messages.join(' ');
+        }
+        if (typeof payload.detail === 'string') return payload.detail;
+      }
     }
 
     return fallback;

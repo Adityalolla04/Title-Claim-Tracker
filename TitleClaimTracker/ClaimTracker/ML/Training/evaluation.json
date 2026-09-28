@@ -1,0 +1,75 @@
+{
+  "modelName": "title-claim-sdca",
+  "modelVersion": "csv-20260925172948",
+  "datasetVersion": "synthetic-v1",
+  "datasetProvenance": "Synthetic, repository-controlled examples; source-group holdout; seed 42.",
+  "seed": 42,
+  "trainingSamples": 12,
+  "evaluationSamples": 4,
+  "testGroups": [
+    "deed-a",
+    "easement-a",
+    "lien-a",
+    "title-a"
+  ],
+  "accuracy": 1,
+  "macroF1": 1,
+  "weightedF1": 1,
+  "perClass": [
+    {
+      "classIndex": 0,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1
+    },
+    {
+      "classIndex": 1,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1
+    },
+    {
+      "classIndex": 2,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1
+    },
+    {
+      "classIndex": 3,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1
+    }
+  ],
+  "confusionMatrix": [
+    [
+      1,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      1,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      1,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      1
+    ]
+  ],
+  "limitations": [
+    "The dataset is synthetic and small.",
+    "The score is an uncalibrated model score, not a probability of correctness.",
+    "Evaluation groups are held out by source group to reduce template leakage."
+  ]
+}

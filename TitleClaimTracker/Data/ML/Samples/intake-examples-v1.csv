@@ -1,0 +1,11 @@
+ExampleId,Text,PrimaryLabel,IssueTags,SourceType,SourceReference,IsSynthetic,ReviewStatus,TemplateOrSourceGroup
+ML-0001,"The chain of title for this fictional parcel appears inconsistent and ownership is disputed.",Title Claim,"ownership;chain-of-title",Synthetic fixture,fixture-v1,True,Reviewed,group-title-01
+ML-0002,"The buyer says a prior recorded ownership claim conflicts with the fictional closing documents.",Title Claim,"ownership;recorded-title",Synthetic fixture,fixture-v1,True,Reviewed,group-title-02
+ML-0003,"A contractor says an unpaid invoice created a lien against the fictional property.",Lien,"construction;unpaid-debt",Synthetic fixture,fixture-v1,True,Reviewed,group-lien-01
+ML-0004,"A mortgage balance is described as an encumbrance that remains attached to the fictional parcel.",Lien,"mortgage;encumbrance",Synthetic fixture,fixture-v1,True,Reviewed,group-lien-02
+ML-0005,"A utility provider requests permission to cross the fictional parcel to maintain a line.",Easement,"utility;access",Synthetic fixture,fixture-v1,True,Reviewed,group-easement-01
+ML-0006,"The neighbors disagree about a fictional right of way across the property.",Easement,"right-of-way;access",Synthetic fixture,fixture-v1,True,Reviewed,group-easement-02
+ML-0007,"The purchaser alleges that the fictional deed signature was forged.",Deed Dispute,"forgery;signature",Synthetic fixture,fixture-v1,True,Reviewed,group-deed-01
+ML-0008,"The fictional conveyance is challenged because the deed was not validly executed.",Deed Dispute,"execution;conveyance",Synthetic fixture,fixture-v1,True,Reviewed,group-deed-02
+ML-0009,"Can you explain what documents I should keep for a property question?",Out-of-scope/uncertain,"general-question",Synthetic fixture,fixture-v1,True,Reviewed,group-uncertain-01
+ML-0010,"There may be a problem, but the fictional intake gives no issue, property, or document details.",Out-of-scope/uncertain,"missing-facts",Synthetic fixture,fixture-v1,True,Reviewed,group-uncertain-02

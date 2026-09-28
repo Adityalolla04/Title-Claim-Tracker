@@ -1,0 +1,37 @@
+{
+  "manifestVersion": "1.0",
+  "status": "planned-not-downloaded",
+  "retrievedUtc": null,
+  "selection": {
+    "masterLimit": 100000,
+    "masterOrder": ":id ASC; validate document_id uniqueness",
+    "legalsSelection": "all rows whose document_id occurs in the bounded Master snapshot; paged by :id",
+    "documentCodesLimit": 5000
+  },
+  "sources": [
+    {
+      "name": "ACRIS Real Property Master",
+      "datasetId": "bnx9-e6tj",
+      "apiUrl": "https://data.cityofnewyork.us/resource/bnx9-e6tj.json",
+      "metadataUrl": "https://data.cityofnewyork.us/api/views/bnx9-e6tj",
+      "role": "recorded document metadata"
+    },
+    {
+      "name": "ACRIS Real Property Legals",
+      "datasetId": "8h5j-fqxa",
+      "apiUrl": "https://data.cityofnewyork.us/resource/8h5j-fqxa.json",
+      "metadataUrl": "https://data.cityofnewyork.us/api/views/8h5j-fqxa",
+      "role": "document-to-property legal references"
+    },
+    {
+      "name": "ACRIS Document Control Codes",
+      "datasetId": "7isb-wh4c",
+      "apiUrl": "https://data.cityofnewyork.us/resource/7isb-wh4c.json",
+      "metadataUrl": "https://data.cityofnewyork.us/api/views/7isb-wh4c",
+      "role": "document-code lookup; verify API availability from metadata before download"
+    }
+  ],
+  "termsAndAccess": "NYC Open Data Socrata APIs are public endpoints subject to the dataset terms and current rate limits. An app token may improve rate limits but is not embedded in this repository. The script accepts an optional SOCRATA_APP_TOKEN environment variable.",
+  "reproducibility": "Source data can change. Retain the raw snapshot and this manifest's retrieval timestamp for reproducibility; a later rerun may produce different rows.",
+  "limitations": "This is a bounded 100,000-Master-row development sample, not a complete ACRIS archive. API records are retained locally as raw JSON; the Spark pipeline writes curated Parquet and model artifacts locally."
+}

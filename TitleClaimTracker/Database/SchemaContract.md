@@ -5,8 +5,8 @@
 - **Database:** explicitly selected target; default guard `TitleClaimTracker`
 - **Schema:** `dbo`
 - **SQL Server:** SQL Server 2016 SP1 or later, compatibility level 130 or later. The default portfolio setup uses SQL Server Express/Developer/Standard-compatible features only; no Enterprise-only feature is required.
-- **Schema authority:** `Database/Upgrade_TitleClaimIntelligence.sql` is the versioned, reviewed deployment artifact for the existing script-managed database. The application does not call `Database.Migrate()` and does not create or alter tables at startup.
-- **Version:** `2.0.3`, recorded in `dbo.SchemaVersions`.
+- **Schema authority:** `Database/upgrades/Upgrade_TitleClaimIntelligence.sql` is the versioned, reviewed deployment artifact for the existing script-managed database. The application does not call `Database.Migrate()` and does not create or alter tables at startup.
+- **Version:** `2.0.4`, recorded in `dbo.SchemaVersions`; 2.0.4 is the additive PDF-storage extension over the canonical 2.0.3 schema.
 - **EF Core:** the application uses EF Core 8.0.11 and ASP.NET Core Identity EF Core 8.0.11. `Infrastructure/Data/TitleClaimDbContext.cs` is the matching object-relational mapping, not a second deployment definition.
 - **Legacy baseline:** the repository contained no `Migrations` directory and no `__EFMigrationsHistory`. Existing databases are upgraded in place by the SSMS script. Do not run an EF migration or apply the SSMS script twice through a different path. A future schema change must add a new reviewed script version and matching mappings.
 
@@ -108,6 +108,29 @@ Checks:
 - An active row has no deletion timestamp/account; a soft-deleted row has `IsDeleted = 1`. The application supplies the deletion timestamp and actor.
 
 Ownership: application-created claims require an authenticated `SubmittedByUserId`. Regular-user reads are restricted to that account and active rows. Administrators can read active rows across accounts, including NULL-owner legacy rows. The upgrade does not assign any existing row to an arbitrary account. The current API uses soft deletion, so history is not removed.
+
+### `ClaimDocuments` (added by 2.0.4)
+
+The 2.0.4 extension stores private PDF evidence for an existing claim. It is installed
+only by `Database/upgrades/Upgrade_ClaimDocuments_2.0.4.sql`, after the database has
+reached 2.0.3; the application does not create this table at startup.
+
+| Column | Type | Nullability | Default |
+|---|---|---|---|
+| `ClaimDocumentID` | `bigint IDENTITY(1,1)` | NOT NULL | generated |
+| `FilingID` | `int` | NOT NULL | none |
+| `UploadedByUserId` | `nvarchar(450)` | NOT NULL | none |
+| `FileName` | `nvarchar(255)` | NOT NULL | none |
+| `ContentType` | `nvarchar(100)` | NOT NULL | `N'application/pdf'` |
+| `FileSizeBytes` | `int` | NOT NULL | none |
+| `Content` | `varbinary(max)` | NOT NULL | none |
+| `UploadedUtc` | `datetime2(7)` | NOT NULL | `SYSUTCDATETIME()` |
+
+Primary key: `PK_ClaimDocuments (ClaimDocumentID)`. Foreign keys to `LegalFilings(FilingID)`
+and `AspNetUsers(Id)` use no cascade. Checks restrict content type to PDF and file size to
+1 through 10 MiB. Index: `IX_ClaimDocuments_Filing_UploadedUtc (FilingID, UploadedUtc)`.
+The authenticated application enforces claim-owner or administrator access for listing,
+uploading, and downloading. Claim soft deletion does not remove evidence bytes.
 
 ### `AuditLog` (legacy, reused and extended)
 

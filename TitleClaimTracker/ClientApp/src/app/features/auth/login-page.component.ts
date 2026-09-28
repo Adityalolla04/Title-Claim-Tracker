@@ -82,7 +82,7 @@ export class LoginPageComponent {
 
   private safeReturnUrl(): string {
     const value = this.route.snapshot.queryParamMap.get('returnUrl');
-    return value && value.startsWith('/') && !value.startsWith('//') ? value : '/dashboard';
+    return value && value.startsWith('/') && !value.startsWith('//') ? value : '/claims';
   }
 
   private apiError(error: unknown, fallback: string): string {

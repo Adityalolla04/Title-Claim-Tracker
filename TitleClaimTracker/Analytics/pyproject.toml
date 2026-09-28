@@ -1,0 +1,13 @@
+[project]
+name = "title-claim-analytics"
+version = "0.1.0"
+description = "Read-only PySpark analytics jobs for Title Claim Tracker"
+requires-python = ">=3.12"
+dependencies = ["pyspark>=3.5,<4"]
+
+[project.optional-dependencies]
+test = ["pytest>=8,<10"]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]

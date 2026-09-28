@@ -1,6 +1,6 @@
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
-import { Observable, catchError, finalize, of, shareReplay, switchMap, tap, throwError } from 'rxjs';
+import { Observable, catchError, finalize, map, of, shareReplay, switchMap, tap, throwError } from 'rxjs';
 import { CurrentAccount, LoginRequest, RegisterRequest } from '../models/auth.model';
 import { AuthStateService } from './auth-state.service';
 
@@ -53,6 +53,7 @@ export class AuthService {
   register(request: RegisterRequest): Observable<CurrentAccount> {
     return this.getCsrfToken().pipe(
       switchMap(() => this.http.post<CurrentAccount>('/api/auth/register', request)),
+      switchMap(account => this.getCsrfToken().pipe(map(() => account))),
       tap(account => this.state.setAccount(account)),
     );
   }
@@ -60,6 +61,7 @@ export class AuthService {
   login(request: LoginRequest): Observable<CurrentAccount> {
     return this.getCsrfToken().pipe(
       switchMap(() => this.http.post<CurrentAccount>('/api/auth/login', request)),
+      switchMap(account => this.getCsrfToken().pipe(map(() => account))),
       tap(account => this.state.setAccount(account)),
     );
   }
