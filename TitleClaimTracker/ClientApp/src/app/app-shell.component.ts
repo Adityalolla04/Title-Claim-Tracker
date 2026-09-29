@@ -18,6 +18,7 @@ import { AuthService } from './core/services/auth.service';
         <nav aria-label="Primary navigation">
           <ng-container *ngIf="auth.isAuthenticated(); else publicNavigation">
             <a routerLink="/claims" routerLinkActive="active">Claims</a>
+            <a routerLink="/analytics" routerLinkActive="active">Analytics</a>
             <a routerLink="/dashboard" routerLinkActive="active">Triage</a>
           </ng-container>
           <ng-template #publicNavigation>
@@ -26,7 +27,10 @@ import { AuthService } from './core/services/auth.service';
         </nav>
         <div class="account-actions">
           <ng-container *ngIf="auth.account() as account; else signedOut">
-            <span class="account-name">{{ account.displayName || account.email }}</span>
+            <span class="account-name">{{ auth.isAdministrator() ? 'Administrator' : (account.displayName || account.email) }}</span>
+            <span class="account-role" [class.admin-role]="auth.isAdministrator()">
+              {{ auth.isAdministrator() ? 'Administrator' : 'Claimant' }}
+            </span>
             <button type="button" class="button button-quiet" [disabled]="loggingOut" (click)="logout()">
               {{ loggingOut ? 'Signing out…' : 'Sign out' }}
             </button>
@@ -58,6 +62,8 @@ import { AuthService } from './core/services/auth.service';
     nav a.active { border-bottom: 3px solid #5367e8; }
     .account-actions { align-items: center; display: flex; gap: 10px; }
     .account-name { color: #718096; font-size: .78rem; max-width: 190px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .account-role { background: #e8f3ed; border-radius: 6px; color: #276246; font-size: .68rem; font-weight: 800; padding: 5px 8px; white-space: nowrap; }
+    .account-role.admin-role { background: #fff1d6; color: #805700; }
     .button { border: 1px solid #dce1ec; border-radius: 9px; cursor: pointer; display: inline-block; font: inherit; font-size: .82rem; font-weight: 800; padding: 9px 13px; text-decoration: none; }
     .button-primary { background: #5367e8; border-color: #5367e8; color: #fff; }
     .button-quiet { background: #fff; color: #5367e8; }

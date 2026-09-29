@@ -46,7 +46,7 @@ public static class IdentityBootstrapper
             EnsureSucceeded(roleResult, "administrator role assignment");
         }
 
-        logger.LogInformation("Identity bootstrap verified the configured administrator account {Email}.", email);
+        logger.LogInformation("Identity bootstrap verified the configured administrator account.");
     }
 
     private static async Task EnsureRoleAsync(RoleManager<IdentityRole> roleManager, string role, CancellationToken cancellationToken)

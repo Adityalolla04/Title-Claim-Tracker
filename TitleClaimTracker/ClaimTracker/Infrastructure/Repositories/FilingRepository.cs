@@ -46,8 +46,20 @@ public sealed class FilingRepository(TitleClaimDbContext db) : IFilingRepository
         var now = DateTime.UtcNow;
         var firstMonth = new DateTime(now.Year, now.Month, 1).AddMonths(-5);
         var recentDates = await query.Where(x => x.DateFiled >= firstMonth).Select(x => x.DateFiled).ToListAsync(cancellationToken);
+        var firstSolvedDates = await db.ClaimStatusHistory.AsNoTracking()
+            .Where(history => (history.ToStatus == "Resolved" || history.ToStatus == "Closed") &&
+                history.Filing != null && !history.Filing.IsDeleted &&
+                (isAdministrator || history.Filing.SubmittedByUserId == userId))
+            .GroupBy(history => history.FilingID)
+            .Select(group => group.Min(history => history.TransitionedUtc))
+            .ToListAsync(cancellationToken);
+        var recentSolvedDates = firstSolvedDates.Where(date => date >= firstMonth).ToArray();
         var months = Enumerable.Range(0, 6).Select(offset => firstMonth.AddMonths(offset))
-            .Select(month => new MonthlyClaimCountDto(month.Year, month.Month, recentDates.Count(date => date.Year == month.Year && date.Month == month.Month)))
+            .Select(month => new MonthlyClaimCountDto(
+                month.Year,
+                month.Month,
+                recentDates.Count(date => date.Year == month.Year && date.Month == month.Month),
+                recentSolvedDates.Count(date => date.Year == month.Year && date.Month == month.Month)))
             .ToArray();
         return new ClaimAnalyticsDto(total, open, total - open, statuses, types, months);
     }

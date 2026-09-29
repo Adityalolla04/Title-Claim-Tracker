@@ -94,6 +94,35 @@ public sealed class FilingRepositorySecurityTests
     }
 
     [Fact]
+    public async Task Analytics_MonthlyFiledAndSolvedCountsRespectOwnershipAndCountEachClaimOnce()
+    {
+        await using var context = CreateContext();
+        SeedFilings(context);
+        var today = DateTime.UtcNow.Date;
+        context.LegalFilings.Single(item => item.FilingID == 1).DateFiled = today;
+        context.LegalFilings.Single(item => item.FilingID == 2).DateFiled = today;
+        context.ClaimStatusHistory.AddRange(
+            new ClaimStatusHistory { FilingID = 1, FromStatus = "New", ToStatus = "Resolved", TransitionedUtc = DateTime.UtcNow.AddDays(-2) },
+            new ClaimStatusHistory { FilingID = 1, FromStatus = "Resolved", ToStatus = "Closed", TransitionedUtc = DateTime.UtcNow.AddDays(-1) },
+            new ClaimStatusHistory { FilingID = 2, FromStatus = "New", ToStatus = "Closed", TransitionedUtc = DateTime.UtcNow.AddDays(-1) },
+            new ClaimStatusHistory { FilingID = 4, FromStatus = "New", ToStatus = "Resolved", TransitionedUtc = DateTime.UtcNow.AddDays(-1) });
+        await context.SaveChangesAsync();
+
+        var claimant = await new FilingService(context, new FilingRepository(context), new TestCurrentUserAccessor("user-a", false), NullLogger<FilingService>.Instance)
+            .GetAnalyticsAsync(CancellationToken.None);
+        var administrator = await new FilingService(context, new FilingRepository(context), new TestCurrentUserAccessor("admin", true), NullLogger<FilingService>.Instance)
+            .GetAnalyticsAsync(CancellationToken.None);
+        var currentMonth = DateTime.UtcNow.Month;
+        var claimantMonth = Assert.Single(claimant.MonthlySubmissions.Where(item => item.Year == DateTime.UtcNow.Year && item.Month == currentMonth));
+        var administratorMonth = Assert.Single(administrator.MonthlySubmissions.Where(item => item.Year == DateTime.UtcNow.Year && item.Month == currentMonth));
+
+        Assert.Equal(1, claimantMonth.Count);
+        Assert.Equal(1, claimantMonth.SolvedCount);
+        Assert.Equal(2, administratorMonth.Count);
+        Assert.Equal(2, administratorMonth.SolvedCount);
+    }
+
+    [Fact]
     public async Task Claimant_CanEditOwnNewClaim()
     {
         await using var context = CreateContext();

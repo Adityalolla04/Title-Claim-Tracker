@@ -19,6 +19,6 @@ export interface ClaimDocument { claimDocumentID: number; filingID: number; file
 export interface ClaimDocumentAnalysis { claimDocumentID: number; fileName: string; totalPages: number; analyzedPages: number; extractionMode: string; summary: string; claimantName: string | null; address: string | null; city: string | null; state: string | null; issueDescription: string | null; relevantDates: string[]; missingFields: string[]; }
 export interface ClaimAnalytics { totalClaims: number; openClaims: number; resolvedClaims: number; statusBreakdown: ClaimCount[]; typeBreakdown: ClaimCount[]; monthlySubmissions: MonthlyClaimCount[]; }
 export interface ClaimCount { label: string; count: number; }
-export interface MonthlyClaimCount { year: number; month: number; count: number; }
+export interface MonthlyClaimCount { year: number; month: number; count: number; solvedCount: number; }
 export interface RiskReport { propertyID: number; address: string; city: string; state: string; averageRiskScore: number; openClaimsCount: number; filingCount: number; filingTypeCount: number; }
 export interface AuditLogEntry { auditID: number; action: string; columnChanged: string | null; oldValue: string | null; newValue: string | null; changeDate: string | null; actorUserId: string | null; }

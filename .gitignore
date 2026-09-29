@@ -402,3 +402,4 @@ derby.log
 # Angular development cache and compiled bundles
 TitleClaimTracker/ClientApp/.angular/
 TitleClaimTracker/ClientApp/dist/
+**/*.egg-info/

@@ -2,9 +2,11 @@
 using Microsoft.AspNetCore.Antiforgery;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.WebUtilities;
 using TitleClaimTracker.Core.DTOs;
 using TitleClaimTracker.Domain.Identity;
 using TitleClaimTracker.Infrastructure.Security;
+using TitleClaimTracker.Infrastructure.Services;
 
 namespace TitleClaimTracker.Controllers;
 
@@ -13,7 +15,10 @@ public sealed class AuthController(
     UserManager<ApplicationUser> userManager,
     SignInManager<ApplicationUser> signInManager,
     RoleManager<IdentityRole> roleManager,
-    IAntiforgery antiforgery) : ControllerBase
+    IAntiforgery antiforgery,
+    IAccountEmailSender emailSender,
+    IConfiguration configuration,
+    ILogger<AuthController> logger) : ControllerBase
 {
     [AllowAnonymous, IgnoreAntiforgeryToken, HttpGet("csrf")]
     public IActionResult GetCsrfToken()
@@ -74,7 +79,7 @@ public sealed class AuthController(
     public async Task<ActionResult<CurrentAccountDto>> Login(LoginRequest request)
     {
         var user = await userManager.FindByEmailAsync(request.Email.Trim());
-        if (user is null || !user.IsActive)
+        if (user is null || !user.IsActive || await userManager.IsInRoleAsync(user, AppRoles.Administrator))
         {
             return Unauthorized();
         }
@@ -86,6 +91,81 @@ public sealed class AuthController(
         }
 
         return Ok(await ToAccountAsync(user));
+    }
+
+    [AllowAnonymous, HttpPost("admin-login")]
+    public async Task<ActionResult<CurrentAccountDto>> AdminLogin(LoginRequest request)
+    {
+        var email = request.Email.Trim();
+        var allowedEmail = configuration["Identity:AdminAccess:Email"]?.Trim();
+        if (string.IsNullOrWhiteSpace(allowedEmail) || !string.Equals(email, allowedEmail, StringComparison.OrdinalIgnoreCase))
+        {
+            return Unauthorized();
+        }
+
+        var user = await userManager.FindByEmailAsync(email);
+        if (user is null || !user.IsActive || !await userManager.IsInRoleAsync(user, AppRoles.Administrator))
+        {
+            return Unauthorized();
+        }
+
+        var result = await signInManager.PasswordSignInAsync(user, request.Password, request.RememberMe, lockoutOnFailure: true);
+        if (!result.Succeeded)
+        {
+            return Unauthorized();
+        }
+
+        return Ok(await ToAccountAsync(user));
+    }
+
+    [AllowAnonymous, HttpPost("forgot-password")]
+    public async Task<IActionResult> ForgotPassword(ForgotPasswordRequest request, CancellationToken cancellationToken)
+    {
+        if (!emailSender.IsConfigured)
+        {
+            return StatusCode(StatusCodes.Status503ServiceUnavailable, new { error = "Password reset email is not configured. Contact the administrator." });
+        }
+
+        var user = await userManager.FindByEmailAsync(request.Email.Trim());
+        if (user is not null && user.IsActive)
+        {
+            var token = await userManager.GeneratePasswordResetTokenAsync(user);
+            var baseUrl = configuration["PasswordReset:ClientBaseUrl"] ?? "http://localhost:4200";
+            var resetUrl = QueryHelpers.AddQueryString($"{baseUrl.TrimEnd('/')}/reset-password", new Dictionary<string, string?>
+            {
+                ["email"] = user.Email ?? user.UserName ?? request.Email.Trim(),
+                ["token"] = token
+            });
+
+            try
+            {
+                await emailSender.SendPasswordResetAsync(user.Email ?? request.Email.Trim(), user.DisplayName, resetUrl, cancellationToken);
+            }
+            catch (Exception exception)
+            {
+                logger.LogError(exception, "Password reset email delivery failed for account {UserId}.", user.Id);
+            }
+        }
+
+        return Ok(new { message = "If an active account matches that email, password reset instructions will be sent." });
+    }
+
+    [AllowAnonymous, HttpPost("reset-password")]
+    public async Task<IActionResult> ResetPassword(ResetPasswordRequest request)
+    {
+        var user = await userManager.FindByEmailAsync(request.Email.Trim());
+        if (user is null || !user.IsActive)
+        {
+            return BadRequest(new { error = "The reset link is invalid or expired, or the password does not meet the requirements." });
+        }
+
+        var result = await userManager.ResetPasswordAsync(user, request.Token, request.NewPassword);
+        if (!result.Succeeded)
+        {
+            return BadRequest(new { error = "The reset link is invalid or expired, or the password does not meet the requirements." });
+        }
+
+        return Ok(new { message = "Password reset successfully. You can now sign in." });
     }
 
     [Authorize, HttpPost("logout")]

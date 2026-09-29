@@ -12,9 +12,9 @@ import { AuthService } from '../../core/services/auth.service';
   template: `
     <main class="auth-page">
       <section class="auth-card" aria-labelledby="login-title">
-        <span class="eyebrow">SECURE WORKSPACE</span>
-        <h1 id="login-title">Welcome back.</h1>
-        <p class="intro">Sign in to manage your submitted claims and continue an assisted intake.</p>
+        <span class="eyebrow">{{ isAdminLogin ? 'ADMINISTRATOR ACCESS' : 'SECURE WORKSPACE' }}</span>
+        <h1 id="login-title">{{ isAdminLogin ? 'Administrator sign in.' : 'Welcome back.' }}</h1>
+        <p class="intro">{{ isAdminLogin ? 'Sign in with your authorized administrator account.' : 'Sign in to manage your submitted claims and continue an assisted intake.' }}</p>
         <div class="error" *ngIf="errorMessage()" role="alert">{{ errorMessage() }}</div>
         <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
           <label for="email">Email address</label>
@@ -23,10 +23,13 @@ import { AuthService } from '../../core/services/auth.service';
           <label for="password">Password</label>
           <input id="password" type="password" autocomplete="current-password" formControlName="password" />
           <small class="field-error" *ngIf="form.controls.password.touched && form.controls.password.invalid">Enter your password.</small>
+          <a class="forgot-link" routerLink="/forgot-password">Forgot your password?</a>
           <label class="checkbox"><input type="checkbox" formControlName="rememberMe" /> <span>Keep me signed in on this device</span></label>
-          <button class="submit" type="submit" [disabled]="pending">{{ pending ? 'Signing in…' : 'Sign in' }}</button>
+          <button class="submit" type="submit" [disabled]="pending">{{ pending ? 'Signing in…' : (isAdminLogin ? 'Sign in as administrator' : 'Sign in') }}</button>
         </form>
-        <p class="alternate">New to the workspace? <a routerLink="/register">Create an account</a></p>
+        <p class="alternate" *ngIf="!isAdminLogin">New to the workspace? <a routerLink="/register">Create an account</a></p>
+        <p class="alternate" *ngIf="!isAdminLogin">Administrator? <a routerLink="/admin/login">Sign in here</a></p>
+        <p class="alternate" *ngIf="isAdminLogin">Not an administrator? <a routerLink="/login">Use claimant sign in</a></p>
       </section>
     </main>
   `,
@@ -42,6 +45,7 @@ import { AuthService } from '../../core/services/auth.service';
     input:focus { border-color: #5367e8; box-shadow: 0 0 0 3px #5367e826; outline: none; }
     .checkbox { align-items: center; display: flex; font-weight: 600; gap: 7px; margin: 9px 0; }
     .checkbox input { accent-color: #5367e8; }
+    .forgot-link { font-size: .82rem; justify-self: end; }
     .field-error { color: #a33a30; font-size: .76rem; }
     .error { background: #fff0f0; border: 1px solid #f5c2c2; border-radius: 9px; color: #8a1c1c; font-size: .82rem; line-height: 1.45; margin-top: 20px; padding: 11px; }
     .submit { background: #5367e8; border: 0; border-radius: 9px; color: #fff; cursor: pointer; font: inherit; font-weight: 800; margin-top: 12px; padding: 13px; }
@@ -54,6 +58,7 @@ export class LoginPageComponent {
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
+  readonly isAdminLogin = this.route.snapshot.data['adminLogin'] === true;
   readonly errorMessage = signal<string | null>(null);
   readonly form = new FormGroup({
     email: new FormControl('', { nonNullable: true, validators: [Validators.required, Validators.email, Validators.maxLength(256)] }),
@@ -70,7 +75,10 @@ export class LoginPageComponent {
 
     this.pending = true;
     this.errorMessage.set(null);
-    this.auth.login(this.form.getRawValue()).subscribe({
+    const login = this.isAdminLogin
+      ? this.auth.adminLogin(this.form.getRawValue())
+      : this.auth.login(this.form.getRawValue());
+    login.subscribe({
       next: () => void this.router.navigateByUrl(this.safeReturnUrl()),
       error: error => {
         this.pending = false;
@@ -82,7 +90,7 @@ export class LoginPageComponent {
 
   private safeReturnUrl(): string {
     const value = this.route.snapshot.queryParamMap.get('returnUrl');
-    return value && value.startsWith('/') && !value.startsWith('//') ? value : '/claims';
+    return value && value.startsWith('/') && !value.startsWith('//') ? value : this.isAdminLogin ? '/admin' : '/claims';
   }
 
   private apiError(error: unknown, fallback: string): string {

@@ -6,8 +6,12 @@ requires-python = ">=3.12"
 dependencies = ["pyspark>=3.5,<4"]
 
 [project.optional-dependencies]
+dashboard = ["matplotlib>=3.8,<4"]
 test = ["pytest>=8,<10"]
 
 [tool.pytest.ini_options]
 pythonpath = ["."]
 testpaths = ["tests"]
+
+[tool.setuptools]
+py-modules = ["dashboard"]

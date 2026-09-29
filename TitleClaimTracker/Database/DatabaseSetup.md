@@ -70,6 +70,11 @@ child process. The app does not automatically run the upgrade. Enable admin boot
 only if required, using externally supplied `Identity__BootstrapAdmin__Enabled`,
 `Identity__BootstrapAdmin__Email`, and `Identity__BootstrapAdmin__Password`; disable the
 bootstrap flag after the account is provisioned. Do not store the password in SQL or Git.
+Administrator sign-in is available at `/admin/login`. Set
+`Identity__AdminAccess__Email` in the API environment to the single permitted address;
+the account must also have the `Admin` role, provisioned through the bootstrap above.
+Regular sign-in does not accept administrator accounts, and the permitted address is not
+included in client configuration or displayed in the administrator interface.
 
 ## SQL Server requirements
 

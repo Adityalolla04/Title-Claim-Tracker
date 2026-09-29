@@ -2,15 +2,22 @@
 
 The PowerShell script is a legacy synthetic fixture generator. The SQL-backed PySpark runner is the opt-in internal extraction path and is not approved for Tableau Public. No `.tfl` or `.tflx` is included because none was authored or validated here.
 
-## Inputs and outputs
+## Generate the Tableau inputs
 
-- Input: the synthetic records defined in `Analytics/Scripts/Prepare-Analytics.ps1`.
-- Output: the seven CSVs in `Analytics/Data/Prepared/` plus `Analytics/outputs/quality-report.json`.
-- Grain: claims and triage attempts are one-to-one datasets; status history is one-to-many and must be aggregated before relating it to claims.
+From the repository root, generate the synthetic files outside the repository:
+
+```powershell
+$tableauOutput = Join-Path $env:TEMP 'TitleClaimTracker-Tableau-Demo'
+& .\TitleClaimTracker\Analytics\Scripts\Prepare-Analytics.ps1 -OutputDirectory $tableauOutput
+```
+
+Use the CSVs in `$tableauOutput/data/`. The quality report is `$tableauOutput/quality-report.json`; confirm its status is `Passed` and `IsSynthetic` is `true` before building the workbook. The generator does not read or write SQL Server. It replaces CSVs in the chosen output folder when rerun.
+
+The data subjects have different grains: `claims.csv` is one row per claim, `triage_attempts.csv` is one row per attempt, and `status_history.csv` is one row per status event. Keep them as separate Tableau data sources or use logical relationships; do not physically join raw status events to claims and then count claim rows.
 
 ## Optional Tableau Prep flow
 
-1. Add each prepared CSV as a separate input.
+1. In Tableau Desktop, use **Connect > To a File > Text file** and open `claims.csv` from `$tableauOutput/data/`. Add other CSVs as separate logical tables or separate data sources only for views that need them.
 2. Set IDs and categories to string, scores to decimal, counts to integer, and UTC timestamps to datetime.
 3. Trim supported text values and preserve source labels.
 4. Validate `IsSynthetic=true`, score range 0..1, non-negative counts, and parent references.
@@ -22,6 +29,6 @@ The PowerShell script is a legacy synthetic fixture generator. The SQL-backed Py
 
 ## Workbook handoff
 
-Recommended dashboard tabs are Claim Operations, Intake Automation, Model Quality, and Public Record Explorer. Every dashboard should show `SourceDesignation`/synthetic origin, `SnapshotUtc`, model version where relevant, and the limitations in `MetricsDefinitions.md`.
+Recommended dashboard tabs are Claim Operations, Intake Outcomes, Model Evaluation, and Public Document Volume. Every dashboard should show synthetic source designation, `SnapshotUtc`, model version where relevant, and the limitations in `MetricsDefinitions.md`.
 
 Tableau Public publication remains a manual account action. Do not invent a workbook URL or imply that local CSV generation refreshes a published workbook automatically.

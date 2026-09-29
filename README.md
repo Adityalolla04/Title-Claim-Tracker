@@ -50,7 +50,11 @@ flowchart TD
     Months --> View
 ```
 
-The figures describe active application claims, not ACRIS documents, generated CSVs, or model accuracy. “Open” excludes `Resolved` and `Closed`; monthly totals use `DateFiled`. Compare the claimant and administrator views with two test accounts to verify the server-side scope.
+The figures describe active application claims, not ACRIS documents, generated CSVs, or model accuracy. “Open” excludes `Resolved` and `Closed`; monthly filed counts use `DateFiled`, while solved counts use the first recorded transition to `Resolved` or `Closed`. The **Analytics** link is available after sign-in. Claimants see only their own active claims; administrators see active claims across accounts.
+
+The static preview below uses the separate synthetic analytics fixture. It is not live data from signed-in accounts.
+
+![Synthetic claims and triage analytics dashboard preview](TitleClaimTracker/Analytics/dashboard-preview.png)
 
 ## Implementation Steps
 
@@ -66,6 +70,7 @@ Use a disposable development database. The application does not create a databas
    ```
 
    The launch profile serves HTTPS on port `58021` and HTTP on `58022`. Use your own SQL Server instance and development database name.
+   To enable password recovery, provide `Email__Smtp__Host`, `Email__Smtp__Port`, `Email__Smtp__Username`, `Email__Smtp__Password`, and `Email__Smtp__FromAddress` through environment variables or a secret store before starting the API. Optional settings are `Email__Smtp__FromName` and `Email__Smtp__UseSslOnConnect` (`true` for implicit TLS, typically port 465; otherwise STARTTLS, typically port 587). Set `PasswordReset__ClientBaseUrl` to the Angular app's public origin outside local development. Recovery requests return a configuration error until the required SMTP settings are supplied. Never commit SMTP credentials.
 4. In a second terminal, install and start Angular:
 
    ```powershell

@@ -74,7 +74,7 @@ public sealed record ClaimDocumentAnalysisDto(long ClaimDocumentID, string FileN
 
 public sealed record ClaimAnalyticsDto(int TotalClaims, int OpenClaims, int ResolvedClaims, IReadOnlyList<ClaimCountDto> StatusBreakdown, IReadOnlyList<ClaimCountDto> TypeBreakdown, IReadOnlyList<MonthlyClaimCountDto> MonthlySubmissions);
 public sealed record ClaimCountDto(string Label, int Count);
-public sealed record MonthlyClaimCountDto(int Year, int Month, int Count);
+public sealed record MonthlyClaimCountDto(int Year, int Month, int Count, int SolvedCount);
 
 public sealed record RiskReportDto(int PropertyID, string Address, string City, string State, double AverageRiskScore, int OpenClaimsCount, int FilingCount, int FilingTypeCount);
 

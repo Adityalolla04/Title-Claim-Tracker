@@ -66,6 +66,26 @@ export class AuthService {
     );
   }
 
+  adminLogin(request: LoginRequest): Observable<CurrentAccount> {
+    return this.getCsrfToken().pipe(
+      switchMap(() => this.http.post<CurrentAccount>('/api/auth/admin-login', request)),
+      switchMap(account => this.getCsrfToken().pipe(map(() => account))),
+      tap(account => this.state.setAccount(account)),
+    );
+  }
+
+  requestPasswordReset(email: string): Observable<{ message: string }> {
+    return this.getCsrfToken().pipe(
+      switchMap(() => this.http.post<{ message: string }>('/api/auth/forgot-password', { email })),
+    );
+  }
+
+  resetPassword(request: { email: string; token: string; newPassword: string }): Observable<{ message: string }> {
+    return this.getCsrfToken().pipe(
+      switchMap(() => this.http.post<{ message: string }>('/api/auth/reset-password', request)),
+    );
+  }
+
   logout(): Observable<void> {
     return this.http.post<void>('/api/auth/logout', null).pipe(
       tap(() => this.state.clear()),

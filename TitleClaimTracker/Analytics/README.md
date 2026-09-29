@@ -1,10 +1,10 @@
 # Analytics Data Products
 
-- This project has two separate analytics paths: live role-scoped charts in the Angular Claims page, and optional offline exports under this directory.
+- This project has separate analytics paths: live role-scoped metrics in the signed-in Angular Analytics page, a static Matplotlib image built from synthetic CSVs, and optional offline exports.
 
 ## Live Claims Analytics
 
-Sign in and open **Claims**. The charts are produced by `GET /api/filings/analytics`; the API filters active records to the current claimant and returns all active claimants' records only to an administrator.
+Sign in and open **Analytics** (or **Claims** for the compact summary). The live charts are produced by `GET /api/filings/analytics`; the API filters active records to the current claimant and returns all active claimants' records only to an administrator. No account selector is accepted from the browser.
 
 ```mermaid
 flowchart TD
@@ -21,19 +21,36 @@ flowchart TD
 	Month --> Charts
 ```
 
-The ownership filter runs before aggregation so another claimant's records do not affect a claimant's chart. Open counts exclude `Resolved` and `Closed`; category and status counts use active claims; monthly counts use `DateFiled` for the current and previous five calendar months. These are operational workflow counts, not legal outcomes or model-quality measures.
+The ownership filter runs before aggregation so another claimant's records do not affect a claimant's chart. Open counts exclude `Resolved` and `Closed`; category and status counts use active claims. Monthly filed counts use `DateFiled`; monthly solved counts use the first recorded transition to `Resolved` or `Closed`, for the current and previous five calendar months. These are operational workflow counts, not legal outcomes or model-quality measures.
 
 To test the charts, register two claimant accounts and create several fictional claims through the intake page. Sign in as each account and compare totals. Then use an administrator account to change statuses and confirm the admin sees the combined active claims and updated status counts. The synthetic CSV generator below does not seed SQL Server and will not change these charts.
 
 ## Offline Synthetic Demo
 
-Run from the repository root:
+Run from the repository root. This writes outside the repository so demo outputs do not appear as hundreds of untracked files:
 
 ```powershell
-pwsh -File .\TitleClaimTracker\Analytics\Scripts\Prepare-Analytics.ps1
+$tableauOutput = Join-Path $env:TEMP 'TitleClaimTracker-Tableau-Demo'
+& .\TitleClaimTracker\Analytics\Scripts\Prepare-Analytics.ps1 -OutputDirectory $tableauOutput
 ```
 
-The PowerShell preparer writes fictional CSVs under `TitleClaimTracker/Analytics/Data/Prepared/` and a quality report under `TitleClaimTracker/Analytics/outputs/`. It overwrites generated outputs and does not query or update SQL Server. These files are not measured live activity.
+The PowerShell preparer writes seven fictional CSVs under `$tableauOutput/data/` and a quality report at `$tableauOutput/quality-report.json`. It replaces CSVs in that output folder and does not query or update SQL Server. These files are not measured live activity. Connect Tableau Desktop to the CSVs in the `data` folder; do not combine the separate subjects into one flat join.
+
+### Matplotlib README Dashboard
+
+Generate a static comparison image from the same validated synthetic inputs:
+
+```powershell
+Push-Location .\TitleClaimTracker\Analytics
+python -m pip install -e ".[dashboard,test]"
+python .\dashboard.py --data-dir "$tableauOutput\data" --output .\dashboard-preview.png
+python -m pytest -q -p no:cacheprovider
+Pop-Location
+```
+
+![Synthetic claims and triage dashboard preview](dashboard-preview.png)
+
+The preview compares filed versus solved by month, current status, triage outcomes, and class-level F1. It is synthetic and static; it does not show signed-in account data. The application Analytics page is the live, role-scoped dashboard.
 
 ## Optional SQL/PySpark Export
 
@@ -52,3 +69,5 @@ python .\TitleClaimTracker\Analytics\pyspark_pipeline.py --confirm-read-only-exp
 The explicit confirmation flag is required before a connection attempt. The runner does not write to SQL Server. Runtime export needs a separately approved environment; the local test command validates query and privacy rules only.
 
 Use `DataDictionary.md`, `MetricsDefinitions.md`, and `Tableau/PrepFlowInstructions.md` for dataset fields and worksheet definitions. Aggregate status history before joining it to claims, and publish only reviewed synthetic data to Tableau Public.
+
+For click-by-click Tableau Desktop steps and a paste-ready Copilot prompt, see [Copilot Dashboard Instructions](Tableau/CopilotDashboardInstructions.md).
